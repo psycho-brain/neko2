@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>三毛猫と遊ぼう</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: #f5f5f5;
+      background-size: cover;
+      background-position: center;
+    }
+    .top {
+      text-align: center;
+      padding: 20px;
+      color: #fff;
+      background: rgba(0,0,0,0.4);
+      position: relative;
+    }
+    #appTitle {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+    #appDesc {
+      font-size: 14px;
+    }
+    .controls {
+      margin-top: 10px;
+    }
+    #lotteryBtn {
+      padding: 10px 30px;
+      font-size: 18px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .nav-buttons {
+      margin-top: 10px;
+    }
+    .nav-buttons button {
+      margin: 0 5px;
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+    .cat-event {
+      margin-top: 20px;
+      text-align: center;
+      color: #333;
+    }
+    .cat-choices button {
+      margin: 5px;
+      padding: 8px 16px;
+      cursor: pointer;
+    }
+    .cat-image {
+      margin-top: 10px;
+      max-width: 200px;
+      border-radius: 8px;
+    }
+    .reaction {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    /* 管理画面 */
+    #adminPanelToggle {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      padding: 6px 10px;
+      cursor: pointer;
+      z-index: 1000;
+    }
+    #adminPanel {
+      position: fixed;
+      top: 40px;
+      right: 10px;
+      width: 320px;
+      max-height: 80vh;
+      overflow-y: auto;
+      background: #ffffff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      display: none;
+      z-index: 999;
+      font-size: 12px;
+    }
+    #adminPanel h3 {
+      margin-top: 0;
+    }
+    .admin-section {
+      margin-bottom: 10px;
+      border-top: 1px solid #eee;
+      padding-top: 6px;
+    }
+    .admin-section label {
+      display: block;
+      margin-top: 4px;
+    }
+    .admin-section input[type="text"],
+    .admin-section input[type="number"],
+    .admin-section input[type="color"],
+    .admin-section input[type="file"],
+    .admin-section select,
+    .admin-section textarea {
+      width: 100%;
+      box-sizing: border-box;
+      margin-top: 2px;
+      font-size: 12px;
+    }
+    .admin-section button {
+      margin-top: 4px;
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* 当選画面 */
+    #resultArea {
+      margin: 20px auto;
+      max-width: 400px;
+      text-align: center;
+      background: #fff;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    #resultImage {
+      max-width: 200px;
+      margin-top: 10px;
+      border-radius: 8px;
+    }
+    #historyArea {
+      margin: 20px auto;
+      max-width: 500px;
+      background: #fff;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      display: none;
+    }
+    #historyList img {
+      max-width: 80px;
+      display: block;
+    }
+    #historyList li {
+      margin-bottom: 8px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+  <!-- 管理画面トグルボタン（管理人にだけ表示される想定） -->
+  <button id="adminPanelToggle">管理画面</button>
+
+  <!-- トップ -->
+  <div class="top">
+    <div id="appTitle">三毛猫と遊ぼう</div>
+    <div id="appDesc">シンプルな選択式クジ引きアプリ</div>
+    <div class="controls">
+      <button id="lotteryBtn">クジを引く</button>
+      <div>本日の残り回数: <span id="remainingCount">3</span> / 3</div>
+    </div>
+    <div class="nav-buttons">
+      <button id="showHistoryBtn">当選履歴</button>
+    </div>
+    <div class="cat-event">
+      <div>イベント：三毛猫があらわれた。</div>
+      <img id="catImage" class="cat-image" src="" alt="三毛猫イラスト">
+      <div class="cat-choices">
+        <button data-choice="pet">撫でる</button>
+        <button data-choice="talk">声をかける</button>
+      </div>
+      <div class="reaction" id="reactionText"></div>
+    </div>
+  </div>
+
+  <!-- 当選画面 -->
+  <div id="resultArea">
+    <h3>当選結果</h3>
+    <div id="resultMessage">まだクジを引いていません。</div>
+    <img id="resultImage" src="" alt="" style="display:none;">
+    <div id="saveButtons" style="display:none;">
+      <button id="saveImageBtn">画像を保存</button>
+      <button id="saveTextBtn">テキストを保存</button>
+    </div>
+  </div>
+
+  <!-- 当選履歴 -->
+  <div id="historyArea">
+    <h3>当選履歴</h3>
+    <ul id="historyList"></ul>
+  </div>
+
+  <!-- 管理画面 -->
+  <div id="adminPanel">
+    <h3>管理画面</h3>
+
+    <!-- ログイン -->
+    <div class="admin-section">
+      <label>管理人ログイン（パスワード）</label>
+      <input type="password" id="adminPasswordInput" placeholder="パスワードを入力">
+      <button id="adminLoginBtn">ログイン</button>
+      <button id="adminLogoutBtn">ログアウト</button>
+      <div id="adminStatus"></div>
+      <button id="adminRefreshBtn">更新しても管理画面表示</button>
+    </div>
+
+    <!-- デザイン設定 -->
+    <div class="admin-section">
+      <strong>デザイン設定</strong>
+      <label>背景色</label>
+      <input type="color" id="bgColorInput">
+      <label>背景画像URL</label>
+      <input type="text" id="bgImageInput" placeholder="https://...">
+      <label>タイトル文字色</label>
+      <input type="color" id="titleColorInput">
+      <label>クジ引きボタン色</label>
+      <input type="color" id="buttonColorInput">
+      <button id="applyDesignBtn">デザインを適用</button>
+    </div>
+
+    <!-- 回数設定 -->
+    <div class="admin-section">
+      <strong>クジ回数設定</strong>
+      <label>1日にできる回数</label>
+      <input type="number" id="dailyLimitInput" min="1" max="10" value="3">
+      <button id="applyDailyLimitBtn">回数を設定</button>
+      <button id="resetDailyCountBtn">本日の回数リセット</button>
+    </div>
+
+    <!-- 当選時セリフ -->
+    <div class="admin-section">
+      <strong>当選時のセリフ</strong>
+      <label>当選メッセージ</label>
+      <input type="text" id="winMessageInput" placeholder="当選おめでとう！">
+      <button id="applyWinMessageBtn">セリフを変更</button>
+    </div>
+
+    <!-- アイテム管理 -->
+    <div class="admin-section">
+      <strong>アイテム管理</strong>
+      <label>アイテム名</label>
+      <input type="text" id="itemNameInput" placeholder="アイテム名">
+      <label>アイテム個数（1〜100）</label>
+      <input type="number" id="itemCountInput" min="1" max="100" value="1">
+      <label>アイテム画像アップロード</label>
+      <input type="file" id="itemImageInput" accept="image/*">
+      <button id="addItemBtn">アイテム追加</button>
+      <label>既存アイテム一覧</label>
+      <select id="itemListSelect" size="4"></select>
+      <button id="updateItemBtn">選択アイテム名称修正</button>
+      <button id="deleteItemBtn">選択アイテム削除</button>
+      <button id="addFromHistoryBtn">履歴からアイテム追加</button>
+      <textarea id="codeItemsInput" rows="3" placeholder="コード上から直接記述（JSON配列）"></textarea>
+      <button id="addFromCodeBtn">コードから複数追加</button>
+    </div>
+  </div>
+
+  <script>
+    // ====== 設定・保存用キー ======
+    const STORAGE_KEYS = {
+      adminSession: 'mikeneko_admin_session',
+      design: 'mikeneko_design',
+      daily: 'mikeneko_daily',
+      winMessage: 'mikeneko_win_message',
+      items: 'mikeneko_items',
+      history: 'mikeneko_history'
+    };
+
+    // パスワード（ソース上に直接文字列を置かないように簡易対策）
+    // 実際にはサーバ側で管理すべきですが、ここではクライアントのみで完結させます。
+    function getAdminPassword() {
+      // 'days' を分割して結合（ソースを見ても一目で分かりにくくする程度）
+      const parts = ['da', 'y', 's'];
+      return parts.join('');
+    }
+
+    // ====== 管理人セッション ======
+    function isAdminLoggedIn() {
+      return localStorage.getItem(STORAGE_KEYS.adminSession) === 'true';
+    }
+    function setAdminLoggedIn(flag) {
+      localStorage.setItem(STORAGE_KEYS.adminSession, flag ? 'true' : 'false');
+      updateAdminUI();
+    }
+
+    function updateAdminUI() {
+      const panel = document.getElementById('adminPanel');
+      const status = document.getElementById('adminStatus');
+      if (isAdminLoggedIn()) {
+        panel.style.display = 'block';
+        status.textContent = 'ログイン中（管理人は二名まで想定）';
+      } else {
+        panel.style.display = 'none';
+        status.textContent = 'ログインしていません';
+      }
+    }
+
+    // 更新ボタン：リロードしても管理画面表示継続
+    document.getElementById('adminRefreshBtn').addEventListener('click', () => {
+      if (isAdminLoggedIn()) {
+        alert('管理画面表示状態を維持します（リロードしてもログイン状態は保持されます）。');
+      } else {
+        alert('ログイン後に使用してください。');
+      }
+    });
+
+    // 管理画面トグルボタン（ログインしている場合のみパネル表示）
+    document.getElementById('adminPanelToggle').addEventListener('click', () => {
+      if (isAdminLoggedIn()) {
+        const panel = document.getElementById('adminPanel');
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      } else {
+        alert('管理人パスワードでログインしてください。');
+      }
+    });
+
+    document.getElementById('adminLoginBtn').addEventListener('click', () => {
+      const input = document.getElementById('adminPasswordInput').value;
+      if (input === getAdminPassword()) {
+        setAdminLoggedIn(true);
+        alert('ログインしました。');
+      } else {
+        alert('パスワードが違います。');
+      }
+    });
+
+    document.getElementById('adminLogoutBtn').addEventListener('click', () => {
+      setAdminLoggedIn(false);
+      alert('ログアウトしました。');
+    });
+
+    // ====== デザイン設定 ======
+    function loadDesign() {
+      const data = JSON.parse(localStorage.getItem(STORAGE_KEYS.design) || '{}');
+      if (data.bgColor) document.body.style.backgroundColor = data.bgColor;
+      if (data.bgImage) document.body.style.backgroundImage = `url("${data.bgImage}")`;
+      if (data.titleColor) document.getElementById('appTitle').style.color = data.titleColor;
+      if (data.buttonColor) document.getElementById('lotteryBtn').style.backgroundColor = data.buttonColor;
+
+      document.getElementById('bgColorInput').value = data.bgColor || '#f5f5f5';
+      document.getElementById('bgImageInput').value = data.bgImage || '';
+      document.getElementById('titleColorInput').value = data.titleColor || '#ffffff';
+      document.getElementById('buttonColorInput').value = data.buttonColor || '#ff9900';
+    }
+
+    document.getElementById('applyDesignBtn').addEventListener('click', () => {
+      const bgColor = document.getElementById('bgColorInput').value;
+      const bgImage = document.getElementById('bgImageInput').value;
+      const titleColor = document.getElementById('titleColorInput').value;
+      const buttonColor = document.getElementById('buttonColorInput').value;
+
+      const data = { bgColor, bgImage, titleColor, buttonColor };
+      localStorage.setItem(STORAGE_KEYS.design, JSON.stringify(data));
+      loadDesign();
+      alert('デザインを適用しました。');
+    });
+
+    // ====== 日次回数管理 ======
+    function getTodayKey() {
+      const d = new Date();
+      return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+    }
+
+    function loadDaily() {
+      const data = JSON.parse(localStorage.getItem(STORAGE_KEYS.daily) || '{}');
+      const todayKey = getTodayKey();
+      if (!data.date || data.date !== todayKey) {
+        // 新しい日：回数リセット
+        data.date = todayKey;
+        data.limit = data.limit || 3;
+        data.used = 0;
+        localStorage.setItem(STORAGE_KEYS.daily, JSON.stringify(data));
+      }
+      document.getElementById('remainingCount').textContent = (data.limit - data.used);
+      document.getElementById('dailyLimitInput').value = data.limit || 3;
+    }
+
+    function updateDailyUsed() {
+      const data = JSON.parse(localStorage.getItem(STORAGE_KEYS.daily) || '{}');
+      const todayKey = getTodayKey();
+      if (!data.date || data.date !== todayKey) {
+        data.date = todayKey;
+        data.limit = data.limit || 3;
+        data.used = 0;
+      }
+      data.used = (data.used || 0) + 1;
+      localStorage.setItem(STORAGE_KEYS.daily, JSON.stringify(data));
+      document.getElementById('remainingCount').textContent = (data.limit - data.used);
+    }
+
+    document.getElementById('applyDailyLimitBtn').addEventListener('click', () => {
+      const limit = parseInt(document.getElementById('dailyLimitInput').value, 10) || 3;
+      const data = JSON.parse(localStorage.getItem(STORAGE_KEYS.daily) || '{}');
+      data.limit = limit;
+      data.used = data.used || 0;
+      data.date = getTodayKey();
+      localStorage.setItem(STORAGE_KEYS.daily, JSON.stringify(data));
+      loadDaily();
+      alert('1日の回数を設定しました。');
+    });
+
+    document.getElementById('resetDailyCountBtn').addEventListener('click', () => {
+      const data = JSON.parse(localStorage.getItem(STORAGE_KEYS.daily) || '{}');
+      data.used = 0;
+      data.date = getTodayKey();
+      localStorage.setItem(STORAGE_KEYS.daily, JSON.stringify(data));
+      loadDaily();
+      alert('本日の回数をリセットしました。');
+    });
+
+    // 深夜0時にアイテム数更新（簡易：日付が変わったら daily と同様に扱う）
+    function checkMidnightReset() {
+      loadDaily(); // 日付チェックとリセット
+      // アイテム数の更新は、ここでは「その日の残り回数リセット」と同じ扱いにしています。
+      // 実際にアイテム数を日次で変えたい場合は、別途ロジックを追加してください。
+    }
+
+    // ====== 当選メッセージ ======
+    function loadWinMessage() {
+      const msg = localStorage.getItem(STORAGE_KEYS.winMessage) || '当選おめでとう！';
+      document.getElementById('winMessageInput').value = msg;
+      return msg;
+    }
+
+    document.getElementById('applyWinMessageBtn').addEventListener('click', () => {
+      const msg = document.getElementById('winMessageInput').value || '当選おめでとう！';
+      localStorage.setItem(STORAGE_KEYS.winMessage, msg);
+      alert('当選時のセリフを変更しました。');
+    });
+
+    // ====== アイテム管理 ======
+    function loadItems() {
+      const items = JSON.parse(localStorage.getItem(STORAGE_KEYS.items) || '[]');
+      const select = document.getElementById('itemListSelect');
+      select.innerHTML = '';
+      items.forEach((item, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.textContent = `${item.name} (x${item.count})`;
+        select.appendChild(opt);
+      });
+      return items;
+    }
+
+    function saveItems(items) {
+      localStorage.setItem(STORAGE_KEYS.items, JSON.stringify(items));
+      loadItems();
+    }
+
+    document.getElementById('addItemBtn').addEventListener('click', () => {
+      const name = document.getElementById('itemNameInput').value.trim();
+      let count = parseInt(document.getElementById('itemCountInput').value, 10);
+      if (!name) {
+        alert('アイテム名を入力してください。');
+        return;
+      }
+      if (isNaN(count) || count < 1 || count > 100) {
+        alert('アイテム個数は1〜100で指定してください。');
+        return;
+      }
+
+      const items = loadItems();
+      const fileInput = document.getElementById('itemImageInput');
+      if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          items.push({ name, count, image: e.target.result });
+          saveItems(items);
+          alert('アイテムを追加しました。');
+          fileInput.value = '';
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+      } else {
+        items.push({ name, count, image: null });
+        saveItems(items);
+        alert('アイテムを追加しました（画像なし）。');
+      }
+    });
+
+    document.getElementById('updateItemBtn').addEventListener('click', () => {
+      const select = document.getElementById('itemListSelect');
+      const idx = parseInt(select.value, 10);
+      if (isNaN(idx)) {
+        alert('修正するアイテムを選択してください。');
+        return;
+      }
+      const items = loadItems();
+      const newName = prompt('新しいアイテム名を入力してください', items[idx].name);
+      if (newName) {
+        items[idx].name = newName;
+        saveItems(items);
+        alert('アイテム名称を修正しました。');
+      }
+    });
+
+    document.getElementById('deleteItemBtn').addEventListener('click', () => {
+      const select = document.getElementById('itemListSelect');
+      const idx = parseInt(select.value, 10);
+      if (isNaN(idx)) {
+        alert('削除するアイテムを選択してください。');
+        return;
+      }
+      const items = loadItems();
+      items.splice(idx, 1);
+      saveItems(items);
+      alert('アイテムを削除しました。');
+    });
+
+    // 履歴からアイテム追加（履歴の最新アイテムを再登録）
+    document.getElementById('addFromHistoryBtn').addEventListener('click', () => {
+      const history = JSON.parse(localStorage.getItem(STORAGE_KEYS.history) || '[]');
+      if (!history.length) {
+        alert('履歴がありません。');
+        return;
+      }
+      const last = history[history.length - 1];
+      const items = loadItems();
+      items.push({
+        name: last.name,
+        count: 1,
+        image: last.image || null
+      });
+      saveItems(items);
+      alert('履歴からアイテムを追加しました。');
+    });
+
+    // コード上から直接記述（JSON配列）で複数追加
+    document.getElementById('addFromCodeBtn').addEventListener('click', () => {
+      const text = document.getElementById('codeItemsInput').value.trim();
+      if (!text) {
+        alert('JSON配列を入力してください。');
+        return;
+      }
+      try {
+        const arr = JSON.parse(text);
+        if (!Array.isArray(arr)) throw new Error('配列ではありません');
+        const items = loadItems();
+        arr.forEach(obj => {
+          if (obj && obj.name) {
+            let count = parseInt(obj.count, 10);
+            if (isNaN(count) || count < 1 || count > 100) count = 1;
+            items.push({
+              name: obj.name,
+              count,
+              image: obj.image || null
+            });
+          }
+        });
+        saveItems(items);
+        alert('コードから複数アイテムを追加しました。');
+      } catch (e) {
+        alert('JSONの形式が不正です。');
+      }
+    });
+
+    // ====== 当選履歴 ======
+    function loadHistory() {
+      return JSON.parse(localStorage.getItem(STORAGE_KEYS.history) || '[]');
+    }
+
+    function saveHistory(history) {
+      localStorage.setItem(STORAGE_KEYS.history, JSON.stringify(history));
+    }
+
+    function renderHistory() {
+      const history = loadHistory();
+      const list = document.getElementById('historyList');
+      list.innerHTML = '';
+      history.forEach(h => {
+        const li = document.createElement('li');
+        li.textContent = h.name;
+        if (h.image) {
+          const img = document.createElement('img');
+          img.src = h.image;
+          li.appendChild(img);
+        }
+        list.appendChild(li);
+      });
+    }
+
+    document.getElementById('showHistoryBtn').addEventListener('click', () => {
+      const area = document.getElementById('historyArea');
+      if (area.style.display === 'none' || !area.style.display) {
+        renderHistory();
+        area.style.display = 'block';
+      } else {
+        area.style.display = 'none';
+      }
+    });
+
+    // ====== 三毛猫イベント ======
+    const reactions = [
+      'シャーっと威嚇した！',
+      'ミギャーとだみ声で鳴いた！',
+      'すばやく逃げてしまった！',
+      '尻尾をビタンと鳴らした！',
+      '喉をゴロゴロ鳴らしている…',
+      '引っ掻かれてしまった！',
+      'スリスリして甘えてきた！'
+    ];
+
+    function randomReaction() {
+      const idx = Math.floor(Math.random() * reactions.length);
+      return reactions[idx];
+    }
+
+    document.querySelectorAll('.cat-choices button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('reactionText').textContent = randomReaction();
+      });
+    });
+
+    // 三毛猫イラスト（仮の画像URL。実際は任意の綺麗な三毛猫イラストを指定）
+    document.getElementById('catImage').src =
+      'https://placekitten.com/300/200'; // デモ用
+
+    // ====== クジ引き処理 ======
+    document.getElementById('lotteryBtn').addEventListener('click', () => {
+      const daily = JSON.parse(localStorage.getItem(STORAGE_KEYS.daily) || '{}');
+      const todayKey = getTodayKey();
+      if (!daily.date || daily.date !== todayKey) {
+        loadDaily();
+      }
+      if ((daily.used || 0) >= (daily.limit || 3)) {
+        alert('本日のクジ引き回数は上限に達しました。');
+        return;
+      }
+
+      const items = loadItems();
+      if (!items.length) {
+        alert('アイテムが登録されていません。管理画面から追加してください。');
+        return;
+      }
+
+      // ユーザーからは何が当たるか分からないように、単純なランダム抽選
+      const idx = Math.floor(Math.random() * items.length);
+      const item = items[idx];
+
+      updateDailyUsed();
+
+      const winMsg = loadWinMessage();
+      const resultMessage = document.getElementById('resultMessage');
+      resultMessage.textContent = `${winMsg}「${item.name}」が当たりました！`;
+
+      const resultImage = document.getElementById('resultImage');
+      if (item.image) {
+        resultImage.src = item.image;
+        resultImage.style.display = 'block';
+      } else {
+        resultImage.style.display = 'none';
+      }
+
+      // 履歴保存
+      const history = loadHistory();
+      history.push({ name: item.name, image: item.image || null });
+      saveHistory(history);
+
+      // 画像・テキスト保存ボタン表示
+      document.getElementById('saveButtons').style.display = 'block';
+    });
+
+    // 画像保存（ブラウザのダウンロード機能を利用）
+    document.getElementById('saveImageBtn').addEventListener('click', () => {
+      const img = document.getElementById('resultImage');
+      if (!img.src) {
+        alert('画像がありません。');
+        return;
+      }
+      const a = document.createElement('a');
+      a.href = img.src;
+      a.download = 'lottery_item.png';
+      a.click();
+    });
+
+    // テキスト保存（簡易的にテキストファイルとしてダウンロード）
+    document.getElementById('saveTextBtn').addEventListener('click', () => {
+      const text = document.getElementById('resultMessage').textContent || '';
+      const blob = new Blob([text], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'lottery_item.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // ====== 初期ロード ======
+    window.addEventListener('load', () => {
+      updateAdminUI();
+      loadDesign();
+      loadDaily();
+      loadWinMessage();
+      loadItems();
+      checkMidnightReset();
+    });
+  </script>
+</body>
+</html>
