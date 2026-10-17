@@ -324,19 +324,19 @@
     });
 
     document.getElementById('adminLoginBtn').addEventListener('click', () => {
-      const input = document.getElementById('adminPasswordInput').value;
-      if (input === getAdminPassword()) {
-        setAdminLoggedIn(true);
-        alert('ログインしました。');
-      } else {
-        alert('パスワードが違います。');
-      }
-    });
+  const input = document.getElementById('adminPasswordInput').value;
+  if (input === getAdminPassword()) {
+    setAdminLoggedIn(true);
 
-    document.getElementById('adminLogoutBtn').addEventListener('click', () => {
-      setAdminLoggedIn(false);
-      alert('ログアウトしました。');
-    });
+    // ★ここを追加する
+    document.getElementById('adminPanel').style.display = 'block';
+
+    alert('ログインしました。');
+  } else {
+    alert('パスワードが違います。');
+  }
+});
+
 
     // ====== デザイン設定 ======
     function loadDesign() {
